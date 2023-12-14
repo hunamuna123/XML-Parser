@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Parser</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+    <input type="file" id="xmlFile" accept=".xml">
+    <label for="tagName">Введите тег:</label>
+    <input type="text" id="tagName" placeholder="Введите сюда тег">
+    <button onclick="parseXML()" class="btn btn-secondary">Извлечь данные </button>
+
+    <div class="container">
+        <label for="percentIncrease"> Введите проценты для умножения тега:</label>
+        <input type="number" id="percentIncrease" placeholder="Введите сюда">
+
+        <button onclick="increasePrices()" type="button" class="btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#exampleModal">Применить и скачать измененный файл </button>
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Парсер XML</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        Операция прошла успешно.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result"></div>
+    <style>
+        body {
+            text-align: center;
+            padding-top: 150px;
+        }
+    </style>
+    <script>
+        let parsedValues = [];
+        let originalXmlString = '';
+
+        function parseXML() {
+            const fileInput = document.getElementById('xmlFile');
+            const resultDiv = document.getElementById('result');
+            const tagNameInput = document.getElementById('tagName');
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const xmlString = e.target.result;
+                    originalXmlString = xmlString;
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+
+                    const tagNodes = xmlDoc.getElementsByTagName(tagNameInput.value);
+                    parsedValues = [];
+
+                    for (let i = 0; i < tagNodes.length; i++) {
+                        const value = tagNodes[i].textContent.trim();
+                        parsedValues.push(value);
+                    }
+
+                    resultDiv.innerHTML = `Values for "${tagNameInput.value}": ${parsedValues.join(', ')}`;
+                };
+
+                reader.readAsText(file);
+            } else {
+                alert('Выберите XML-файл для парсинга.');
+            }
+        }
+
+        function increasePrices() {
+            const percentInput = document.getElementById('percentIncrease');
+            const percent = parseFloat(percentInput.value);
+
+            if (!isNaN(percent)) {
+                const updatedXmlString = originalXmlString.replace(new RegExp(`<${tagNameInput.value}>\\s*\\d+(\\.\\d+)?\\s*<\\/${tagNameInput.value}>`, 'g'), (match) => {
+                    const currentValue = parseFloat(match.match(/\d+(\.\d+)?/)[0]);
+                    const updatedValue = currentValue * (1 + percent / 100);
+                    return `<${tagNameInput.value}>${updatedValue}</${tagNameInput.value}>`;
+                });
+
+                const updatedXmlBlob = new Blob([updatedXmlString], {
+                    type: 'application/xml'
+                });
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(updatedXmlBlob);
+                downloadLink.download = 'updated_file.xml';
+                downloadLink.click();
+            } else {
+                alert('Введите корректное значение процента.');
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous">
+    </script>
+
+    <footer>
+        by hunamunaa
+    </footer>
+</body>
+
+</html>
